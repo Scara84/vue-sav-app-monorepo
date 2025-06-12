@@ -1,34 +1,58 @@
 # Configuration pour le déploiement Infomaniak
-runtime: nodejs20  # Utilisez la version de Node.js 20
+runtime: nodejs20  # Version de Node.js 20
 
-# Commande pour installer les dépendances
-install_dependencies: |
-  npm install
-  cd vue-sav-app/client && npm install --legacy-peer-deps
-  cd ../server && npm install --legacy-peer-deps
-  cd ../..
+# Configuration du build
+build:
+  # Installation des dépendances racine
+  - echo "=== Installation des dépendances racine ==="
+  - npm install --legacy-peer-deps --no-audit --prefer-offline
+  
+  # Installation et build du client
+  - echo "\n=== Installation des dépendances du client ==="
+  - cd vue-sav-app/client
+  - npm install --legacy-peer-deps --no-audit --prefer-offline
+  
+  - echo "\n=== Build du client ==="
+  - npm run build
+  - cd ../..
+  
+  # Installation des dépendances du serveur
+  - echo "\n=== Installation des dépendances du serveur ==="
+  - cd vue-sav-app/server
+  - npm install --legacy-peer-deps --no-audit --prefer-offline
+  - cd ../..
+  
+  # Vérification de la structure des fichiers
+  - echo "\n=== Vérification de la structure des fichiers ==="
+  - echo "\nContenu du répertoire racine:"
+  - ls -la
+  - echo "\nContenu du répertoire client/dist:"
+  - ls -la vue-sav-app/client/dist || echo "Le répertoire client/dist n'existe pas"
+  - echo "\nContenu du répertoire serveur:"
+  - ls -la vue-sav-app/server || echo "Le répertoire serveur n'existe pas"
 
-# Commande pour construire l'application
-build: |
-  cd vue-sav-app/client && npm run build
-  cd ../..
-
-# Commande pour démarrer l'application
-start: node app.js
+# Configuration du démarrage de l'application
+run:
+  command: node --trace-warnings --unhandled-rejections=strict app.js
+  port: 3000
+  node_args: --max_old_space_size=1024
 
 # Dossier contenant les fichiers à déployer
 publish: .
 
-# Variables d'environnement (à définir dans l'interface Infomaniak)
+# Variables d'environnement
 environment:
   NODE_ENV: production
   PORT: 3000
+  NPM_CONFIG_PRODUCTION: 'false'
+  NODE_OPTIONS: '--max_old_space_size=1024'
 
 # Dossiers à conserver entre les déploiements
 persistent_dirs:
   - vue-sav-app/server/uploads
   - vue-sav-app/client/node_modules
   - vue-sav-app/server/node_modules
+  - vue-sav-app/client/dist
 
 # Fichiers à ignorer lors du déploiement
 exclude:
@@ -43,3 +67,17 @@ exclude:
   - .DS_Store
   - .idea
   - .vscode
+  - **/node_modules
+  - **/dist
+  - **/coverage
+  - **/test
+  - **/tests
+
+# Configuration des logs
+logs:
+  - /var/log/nodejs/*.log
+  - vue-sav-app/server/logs/*.log
+
+# Redémarrage automatique en cas d'échec
+auto_restart: true
+restart_delay: 5s
