@@ -1,0 +1,28 @@
+{
+  "name": "sav-app-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "vue-sav-app/client",
+    "vue-sav-app/server"
+  ],
+  "scripts": {
+    "client": "yarn workspace @sav-app/client dev",
+    "server": "yarn workspace @sav-app/server start",
+    "server:dev": "yarn workspace @sav-app/server dev",
+    "dev": "concurrently --kill-others-on-fail \"yarn client\" \"yarn server:dev\"",
+    "build": "yarn workspaces run build",
+    "prepare": "husky install",
+    "lint": "yarn workspaces run lint",
+    "test": "yarn workspaces run test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "husky": "^9.0.11",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "yarn@3.6.4"
+}
