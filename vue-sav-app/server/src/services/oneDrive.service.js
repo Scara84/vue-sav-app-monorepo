@@ -107,43 +107,49 @@ class OneDriveService {
 
   /**
    * Upload un fichier vers OneDrive
+   * @param {Buffer} fileBuffer - Contenu du fichier à uploader
+   * @param {string} fileName - Nom du fichier
+   * @param {string} folderName - Nom du dossier de destination (par défaut: MS_GRAPH.DEFAULT_FOLDER)
+   * @param {string} contentType - Type MIME du fichier (par défaut: 'application/octet-stream')
+   * @returns {Promise<Object>} - Réponse contenant les informations du fichier uploadé et son lien de partage
    */
-  async uploadFile(fileBuffer, fileName, folderName = MS_GRAPH.DEFAULT_FOLDER, mimeType = 'application/octet-stream') {
+  async uploadFile(fileBuffer, fileName, folderName = MS_GRAPH.DEFAULT_FOLDER, contentType = 'application/octet-stream') {
     if (!this.initialized) await this.initialize();
     
     try {
+      console.log(`Tentative d'upload du fichier: ${fileName} vers le dossier: ${folderName}`);
+      
       // S'assurer que le dossier existe
       await this.ensureFolderExists(folderName);
       
-      console.log(`Tentative d'upload du fichier: ${folderName}/${fileName}`);
+      // Construire le chemin complet du fichier
+      const filePath = `${folderName}/${fileName}`;
       
-      // Uploader le fichier
-      const uploadResponse = await this.graphClient
-        .api(`${MS_GRAPH.BASE_URL}/${MS_GRAPH.DRIVE_ID}/root:/${encodeURIComponent(folderName)}/${encodeURIComponent(fileName)}:/content`)
-        .header('Content-Type', mimeType)
+      // Upload du fichier
+      const response = await this.graphClient
+        .api(`${MS_GRAPH.BASE_URL}/${MS_GRAPH.DRIVE_ID}/root:/${encodeURIComponent(filePath)}:/content`)
+        .header('Content-Type', contentType)
         .put(fileBuffer);
       
-      console.log('Fichier uploadé avec succès, création du lien de partage...');
+      console.log('Fichier uploadé avec succès:', response.webUrl);
       
       // Créer un lien de partage
-      const shareResponse = await this.graphClient
-        .api(`${MS_GRAPH.BASE_URL}/${MS_GRAPH.DRIVE_ID}/items/${uploadResponse.id}/createLink`)
-        .post({
-          type: 'view',
-          scope: 'anonymous'
-        });
-      
-      console.log('Lien de partage créé avec succès');
+      const shareLink = await this.createShareLink(response.id);
       
       return {
         success: true,
+        message: 'Fichier uploadé avec succès',
+        file: response,
+        webUrl: response.webUrl,
+        shareLink: shareLink.link.webUrl,
+        shareId: shareLink.id,
         fileInfo: {
-          name: uploadResponse.name,
-          webUrl: shareResponse.link?.webUrl || uploadResponse.webUrl,
-          downloadUrl: uploadResponse['@microsoft.graph.downloadUrl'] || shareResponse.link?.webUrl,
-          id: uploadResponse.id,
-          size: uploadResponse.size,
-          lastModified: uploadResponse.lastModifiedDateTime
+          name: response.name,
+          webUrl: shareLink.link.webUrl || response.webUrl,
+          downloadUrl: response['@microsoft.graph.downloadUrl'] || shareLink.link.webUrl,
+          id: response.id,
+          size: response.size,
+          lastModified: response.lastModifiedDateTime
         }
       };
       
@@ -161,6 +167,58 @@ class OneDriveService {
         }
       }
       throw error;
+    }
+  }
+  
+  /**
+   * Crée un lien de partage pour un fichier ou un dossier
+   * @param {string} itemId - ID du fichier ou dossier OneDrive
+   * @param {string} type - Type de lien (view, edit, embed)
+   * @param {string} scope - Portée du partage (anonymous, organization, users)
+   * @param {string} password - Mot de passe optionnel pour la protection
+   * @param {string} expirationDateTime - Date d'expiration optionnelle au format ISO
+   * @returns {Promise<Object>} - Réponse contenant le lien de partage
+   */
+  async createShareLink(itemId, type = 'view', scope = 'anonymous', password = null, expirationDateTime = null) {
+    if (!this.initialized) await this.initialize();
+    
+    try {
+      const payload = {
+        type: type, // view, edit, embed
+        scope: scope, // anonymous, organization, users
+        password: password, // Optionnel
+        expirationDateTime: expirationDateTime, // Optionnel, ex: '2024-12-31T00:00:00Z'
+        retainInheritedPermissions: false
+      };
+      
+      // Nettoyer l'objet des valeurs null/undefined
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === null || payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
+      
+      const response = await this.graphClient
+        .api(`${MS_GRAPH.BASE_URL}/${MS_GRAPH.DRIVE_ID}/items/${itemId}/createLink`)
+        .post(payload);
+      
+      console.log('Lien de partage créé avec succès');
+      return response;
+      
+    } catch (error) {
+      console.error('Erreur lors de la création du lien de partage:');
+      console.error('Code:', error.code);
+      console.error('Message:', error.message);
+      if (error.statusCode) console.error('Status:', error.statusCode);
+      if (error.body) {
+        try {
+          const errorBody = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+          console.error('Détails:', errorBody);
+        } catch (e) {
+          console.error('Corps de l\'erreur:', error.body);
+        }
+      }
+      throw new Error(`Échec de la création du lien de partage: ${error.message}`);
     }
   }
 }
