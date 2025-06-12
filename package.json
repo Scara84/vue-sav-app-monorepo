@@ -7,19 +7,16 @@
     "vue-sav-app/server"
   ],
   "scripts": {
-    "client": "yarn workspace @sav-app/client dev",
-    "server": "yarn workspace @sav-app/server start",
-    "server:dev": "yarn workspace @sav-app/server dev",
-    "dev": "concurrently --kill-others-on-fail \"yarn client\" \"yarn server:dev\"",
-    "build": "yarn workspaces run build",
-    "prepare": "husky install",
-    "lint": "yarn workspaces run lint",
-    "test": "yarn workspaces run test",
+    "client": "cd vue-sav-app/client && npm run dev",
+    "server": "cd vue-sav-app/server && npm start",
+    "server:dev": "cd vue-sav-app/server && npm run dev",
+    "dev": "concurrently --kill-others-on-fail \"npm run client\" \"npm run server:dev\"",
+    "build": "npm run build:all",
+    "build:all": "cd vue-sav-app/client && npm run build && cd ../server && npm run build",
     "start": "node app.js",
     "start:prod": "NODE_ENV=production node app.js",
-    "build:all": "yarn workspace @sav-app/client build && yarn workspace @sav-app/server build",
-    "postinstall": "yarn workspaces focus --all --production",
-    "heroku-postbuild": "yarn install && yarn build:all"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "cd vue-sav-app && husky install"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -33,7 +30,6 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "yarn@3.6.4",
   "cacheDirectories": [
     "node_modules",
     "vue-sav-app/client/node_modules",

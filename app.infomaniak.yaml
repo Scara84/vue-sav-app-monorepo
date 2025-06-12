@@ -1,0 +1,45 @@
+# Configuration pour le déploiement Infomaniak
+runtime: nodejs20  # Utilisez la version de Node.js 20
+
+# Commande pour installer les dépendances
+install_dependencies: |
+  npm install
+  cd vue-sav-app/client && npm install --legacy-peer-deps
+  cd ../server && npm install --legacy-peer-deps
+  cd ../..
+
+# Commande pour construire l'application
+build: |
+  cd vue-sav-app/client && npm run build
+  cd ../..
+
+# Commande pour démarrer l'application
+start: node app.js
+
+# Dossier contenant les fichiers à déployer
+publish: .
+
+# Variables d'environnement (à définir dans l'interface Infomaniak)
+environment:
+  NODE_ENV: production
+  PORT: 3000
+
+# Dossiers à conserver entre les déploiements
+persistent_dirs:
+  - vue-sav-app/server/uploads
+  - vue-sav-app/client/node_modules
+  - vue-sav-app/server/node_modules
+
+# Fichiers à ignorer lors du déploiement
+exclude:
+  - .git
+  - .gitignore
+  - .gitmodules
+  - node_modules
+  - .env
+  - .env.*
+  - *.log
+  - npm-debug.log*
+  - .DS_Store
+  - .idea
+  - .vscode
