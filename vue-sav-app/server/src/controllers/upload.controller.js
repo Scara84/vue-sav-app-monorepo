@@ -85,7 +85,7 @@ const uploadToOneDrive = async (req, res) => {
     
     console.log(`Tentative d'upload du fichier: ${file.originalname} (${file.size} octets)`);
     
-    // Uploader le fichier vers OneDrive
+    // Uploader le fichier vers OneDrive et obtenir le lien de partage
     const result = await oneDriveService.uploadFile(
       file.buffer,
       file.originalname,
@@ -93,7 +93,22 @@ const uploadToOneDrive = async (req, res) => {
       file.mimetype
     );
     
-    res.json(result);
+    // Formater la réponse pour le client
+    const response = {
+      success: result.success,
+      message: result.message,
+      file: {
+        name: result.fileInfo.name,
+        url: result.webUrl,
+        shareLink: result.shareLink,
+        id: result.fileInfo.id,
+        size: result.fileInfo.size,
+        lastModified: result.fileInfo.lastModified,
+        mimeType: file.mimetype
+      }
+    };
+    
+    res.json(response);
     
   } catch (error) {
     console.error('Erreur lors de l\'upload vers OneDrive:', error);
