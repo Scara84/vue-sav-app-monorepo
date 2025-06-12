@@ -14,7 +14,16 @@
     "build": "yarn workspaces run build",
     "prepare": "husky install",
     "lint": "yarn workspaces run lint",
-    "test": "yarn workspaces run test"
+    "test": "yarn workspaces run test",
+    "start": "node app.js",
+    "start:prod": "NODE_ENV=production node app.js",
+    "build:all": "yarn workspace @sav-app/client build && yarn workspace @sav-app/server build",
+    "postinstall": "yarn workspaces focus --all --production",
+    "heroku-postbuild": "yarn install && yarn build:all"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
@@ -24,5 +33,10 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "yarn@3.6.4"
+  "packageManager": "yarn@3.6.4",
+  "cacheDirectories": [
+    "node_modules",
+    "vue-sav-app/client/node_modules",
+    "vue-sav-app/server/node_modules"
+  ]
 }
