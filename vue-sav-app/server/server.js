@@ -1,99 +1,106 @@
-require('dotenv').config();
-const express = require('express');
-const multer = require('multer');
-const axios = require('axios');
-const qs = require('qs');
-const fs = require('fs');
-const cors = require('cors');
-const path = require('path');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import config from './src/config/index.js';
+import routes from './src/routes/index.js';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration CORS
+const whitelist = process.env.NODE_ENV === 'production' 
+  ? [process.env.CLIENT_URL]
+  : ['http://localhost:3000', 'http://localhost:5173'];
+
 const corsOptions = {
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    if (!origin || whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
   optionsSuccessStatus: 200
 };
 
+// Initialisation de l'application Express
+const app = express();
+
+// Middleware CORS
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Configuration du stockage des fichiers uploadés
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// Middleware pour parser le JSON
+app.use(express.json({ limit: config.server.uploadLimit }));
+app.use(express.urlencoded({ extended: true, limit: config.server.uploadLimit }));
 
-const upload = multer({ 
-  dest: uploadsDir,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB max file size
-  }
+// Servir les fichiers statiques (si nécessaire)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Routes de l'API
+app.use('/api', routes);
+
+// Redirection pour la compatibilité avec l'ancienne URL
+app.post('/upload-onedrive', (req, res) => {
+  // Redirige vers la version avec /api/ tout en conservant la méthode et le corps de la requête
+  req.url = '/api/upload-onedrive';
+  app.handle(req, res);
 });
 
-// Configuration Microsoft (gérée côté client)
-const clientId = process.env.VITE_MICROSOFT_CLIENT_ID;
-
-// Middleware pour logger les requêtes
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
+// Route racine
+app.get('/', (req, res) => {
+  res.json({
+    name: 'SAV App Backend',
+    version: '1.0.0',
+    environment: config.server.nodeEnv,
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Endpoint de test
-app.get('/test', (req, res) => {
-  res.json({ status: 'ok', message: 'Le serveur fonctionne correctement' });
+// Gestion des erreurs 404
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint non trouvé'
+  });
 });
 
-// 2. Endpoint pour uploader un fichier (stockage local temporaire)
-app.post('/upload-onedrive', upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Aucun fichier téléchargé' });
-    }
-
-    // Ici, vous pouvez ajouter une logique de traitement supplémentaire si nécessaire
-    // Par exemple, renommer le fichier, le déplacer, etc.
-    
-    const fileInfo = {
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
-      path: req.file.path,
-      // Générer une URL pour accéder au fichier (à adapter selon votre configuration)
-      url: `/uploads/${path.basename(req.file.path)}`
-    };
-
-    // Dans une vraie application, vous pourriez vouloir:
-    // 1. Stocker le fichier dans un stockage cloud (S3, etc.)
-    // 2. Enregistrer les métadonnées dans une base de données
-    // 3. Retourner l'URL publique du fichier
-
-    res.json({
-      message: 'Fichier téléchargé avec succès',
-      file: fileInfo,
-      // Pour la compatibilité avec votre code existant
-      webUrl: `http://localhost:3001${fileInfo.url}`,
-      id: path.basename(req.file.path, path.extname(req.file.path))
-    });
-  } catch (error) {
-    console.error('Erreur lors du téléchargement du fichier:', error);
-    res.status(500).json({ 
-      error: 'Erreur lors du traitement du fichier',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
+// Gestion des erreurs globales
+app.use((err, req, res, next) => {
+  console.error('Erreur non gérée:', err);
+  
+  res.status(500).json({
+    success: false,
+    error: 'Une erreur est survenue sur le serveur',
+    // Ne pas envoyer les détails de l'erreur en production
+    details: config.server.nodeEnv === 'development' ? err.message : undefined
+  });
 });
-
-// Servir les fichiers statiques du dossier uploads
-app.use('/uploads', express.static(uploadsDir));
 
 // Démarrer le serveur
+const PORT = config.server.port;
 app.listen(PORT, () => {
-  console.log(`Backend API listening on port ${PORT}`);
+  console.log(`\n=== SAV App Backend ===`);
+  console.log(`Environnement: ${config.server.nodeEnv}`);
+  console.log(`Serveur démarré sur le port ${PORT}`);
   console.log(`URL: http://localhost:${PORT}`);
-  console.log(`Test endpoint: http://localhost:${PORT}/test`);
-  console.log(`Dossier uploads: ${uploadsDir}`);
+  console.log(`Endpoint de test: http://localhost:${PORT}/api/test`);
+  console.log(`Dossier OneDrive: ${config.microsoft.oneDriveFolder}`);
+  console.log('========================\n');
 });
+
+// Gestion des erreurs non capturées
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+export default app;
