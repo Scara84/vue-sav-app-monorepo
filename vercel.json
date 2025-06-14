@@ -4,6 +4,10 @@
     {
       "src": "app.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "client/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -13,9 +17,9 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/app.js"
+      "dest": "/client/$1"
     }
   ],
   "buildCommand": "npm run vercel-build",
-  "outputDirectory": "."
+  "outputDirectory": "./client/dist"
 }
