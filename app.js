@@ -59,13 +59,42 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Servir les fichiers statiques du client
-const clientDistPath = path.join(__dirname, 'vue-sav-app/client/dist');
-app.use(express.static(clientDistPath));
+// Chemin vers les fichiers statiques du client
+const clientDistPath = path.join(__dirname, 'client/dist');
+const clientDistPathV2 = path.join(__dirname, 'vue-sav-app/client/dist');
+
+// Middleware pour servir les fichiers statiques avec gestion des erreurs
+app.use(express.static(clientDistPath, { fallthrough: true }));
+app.use(express.static(clientDistPathV2, { fallthrough: true }));
+
+// Middleware de débogage pour les chemins
+app.use((req, res, next) => {
+  console.log('Request path:', req.path);
+  console.log('Client dist path exists:', fs.existsSync(clientDistPath));
+  console.log('Client dist path V2 exists:', fs.existsSync(clientDistPathV2));
+  next();
+});
 
 // Gérer les routes côté client (pour le routage SPA)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(clientDistPath, 'index.html'));
+app.get('*', (req, res, next) => {
+  const indexPath = path.join(clientDistPath, 'index.html');
+  const indexPathV2 = path.join(clientDistPathV2, 'index.html');
+  
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  } else if (fs.existsSync(indexPathV2)) {
+    return res.sendFile(indexPathV2);
+  } else {
+    console.error('Index.html not found in any of the expected locations');
+    console.error('Tried paths:', [indexPath, indexPathV2]);
+    return res.status(404).send('Application not found');
+  }
+});
+
+// Gestion des erreurs globale
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).send('Something broke!');
 });
 
 // Log des requêtes pour le débogage

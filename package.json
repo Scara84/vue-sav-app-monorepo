@@ -14,10 +14,11 @@
     "dev": "concurrently --kill-others-on-fail \"npm run client\" \"npm run server:dev\"",
     "build": "npm run build:all",
     "build:all": "cd vue-sav-app/client && npm run build && cd ../server && npm run build",
+    "vercel-build": "node vercel-build.js",
     "start": "node app.js",
     "start:prod": "NODE_ENV=production node app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "cd vue-sav-app && husky install"
+    "prepare": "echo \"Skipping husky install in production\" || true"
   },
   "dependencies": {
     "cors": "^2.8.5",
