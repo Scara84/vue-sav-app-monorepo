@@ -16,13 +16,6 @@
       "dest": "/app.js"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    },
-    "buildCommand": "npm run vercel-build"
-  }
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "."
 }
