@@ -1,11 +1,44 @@
 {
   "version": 2,
   "builds": [
-    { "src": "vue-sav-app/client/package.json", "use": "@vercel/static-build" },
-    { "src": "app.js", "use": "@vercel/node" }
+    {
+      "src": "vue-sav-app/client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist",
+        "cleanUrls": true
+      }
+    },
+    {
+      "src": "app.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxLambdaSize": "15mb",
+        "includeFiles": [
+          "vue-sav-app/server/**"
+        ]
+      }
+    }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/app.js" },
-    { "src": "/(.*)", "dest": "/vue-sav-app/client/dist/$1" }
-  ]
+    {
+      "src": "/api/(.*)",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/vue-sav-app/client/dist/$1"
+    },
+    {
+      "src": "/(.*)\\.(jpg|jpeg|png|gif|ico|svg|css|js|json|html|txt|map)$",
+      "dest": "/vue-sav-app/client/dist/$1.$2"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/vue-sav-app/client/dist/index.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
