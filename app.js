@@ -15,13 +15,38 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Configuration CORS
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://sav.fruitstock.eu',
+  'https://www.sav.fruitstock.eu',
+  `https://${process.env.VERCEL_URL}`, // URL de déploiement Vercel
+  `https://${process.env.VERCEL_GIT_REPO_OWNER}-${process.env.VERCEL_GIT_REPO_SLUG}.vercel.app`
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://sav.fruitstock.eu', 'https://www.sav.fruitstock.eu'] 
-    : ['http://localhost:3000', 'http://localhost:5173'],
+  origin: (origin, callback) => {
+    // Autoriser les requêtes sans origine (comme les applications mobiles ou Postman)
+    if (!origin) return callback(null, true);
+    
+    // Vérifier si l'origine est autorisée
+    if (allowedOrigins.includes(origin) || allowedOrigins.some(allowedOrigin => 
+      origin.startsWith(allowedOrigin.replace('https://', 'https://')))) {
+      return callback(null, true);
+    }
+    
+    // Pour les environnements de développement ou de test, tout autoriser
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // Refuser la requête pour les autres cas
+    return callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-vercel-deployment-url'],
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 // Log des requêtes pour le débogage

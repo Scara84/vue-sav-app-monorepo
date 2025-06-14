@@ -28,6 +28,12 @@
     "husky": "^9.0.11",
     "prettier": "^3.0.0"
   },
+  "vercel": {
+    "buildCommand": "npm run build:all",
+    "outputDirectory": "vue-sav-app/client/dist",
+    "cleanUrls": true,
+    "trailingSlash": false
+  },
   "engines": {
     "node": ">=18.0.0"
   },

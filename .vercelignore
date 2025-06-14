@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build files
+.vite/
+*.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Test coverage
+coverage/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local development
+.DS_Store
+
+# Git
+.git/
+
+# Dossiers inutiles pour la production
+vue-sav-app/client/node_modules/
+vue-sav-app/server/node_modules/
+
+# Fichiers de développement
+vue-sav-app/client/public/
+
+# Fichiers de test
+**/*.test.js
+**/*.spec.js
+
+# Fichiers temporaires
+tmp/
+temp/

@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "vue-sav-app/client/package.json", "use": "@vercel/static-build" },
+    { "src": "app.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/app.js" },
+    { "src": "/(.*)", "dest": "/vue-sav-app/client/dist/$1" }
+  ]
+}
