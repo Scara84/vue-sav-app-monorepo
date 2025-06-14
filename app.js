@@ -21,17 +21,26 @@ const allowedOrigins = [
   'https://sav.fruitstock.eu',
   'https://www.sav.fruitstock.eu',
   `https://${process.env.VERCEL_URL}`, // URL de déploiement Vercel
-  `https://${process.env.VERCEL_GIT_REPO_OWNER}-${process.env.VERCEL_GIT_REPO_SLUG}.vercel.app`
+  `https://${process.env.VERCEL_GIT_REPO_OWNER}-${process.env.VERCEL_GIT_REPO_SLUG}.vercel.app`,
+  // Autoriser toutes les origines pour le débogage (à restreindre en production)
+  /.*\.vercel\.app$/
 ].filter(Boolean);
 
+// Configuration CORS
 app.use(cors({
   origin: (origin, callback) => {
     // Autoriser les requêtes sans origine (comme les applications mobiles ou Postman)
     if (!origin) return callback(null, true);
     
     // Vérifier si l'origine est autorisée
-    if (allowedOrigins.includes(origin) || allowedOrigins.some(allowedOrigin => 
-      origin.startsWith(allowedOrigin.replace('https://', 'https://')))) {
+    if (allowedOrigins.some(pattern => {
+      if (typeof pattern === 'string') {
+        return origin === pattern || origin.startsWith(pattern);
+      } else if (pattern instanceof RegExp) {
+        return pattern.test(origin);
+      }
+      return false;
+    })) {
       return callback(null, true);
     }
     
@@ -41,6 +50,7 @@ app.use(cors({
     }
     
     // Refuser la requête pour les autres cas
+    console.warn(`CORS bloqué pour l'origine: ${origin}`);
     return callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -48,6 +58,15 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 200
 }));
+
+// Servir les fichiers statiques du client
+const clientDistPath = path.join(__dirname, 'vue-sav-app/client/dist');
+app.use(express.static(clientDistPath));
+
+// Gérer les routes côté client (pour le routage SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientDistPath, 'index.html'));
+});
 
 // Log des requêtes pour le débogage
 app.use((req, res, next) => {
