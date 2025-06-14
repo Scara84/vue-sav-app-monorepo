@@ -1,13 +1,17 @@
-const { execSync } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 console.log('Starting Vercel build process...');
 
 // Créer le répertoire de sortie s'il n'existe pas
-const distDir = path.join(__dirname, 'client/dist');
-if (!fs.existsSync(distDir)) {
-  fs.mkdirSync(distDir, { recursive: true });
+const distDir = join(__dirname, 'client/dist');
+if (!existsSync(distDir)) {
+  mkdirSync(distDir, { recursive: true });
 }
 
 try {
@@ -18,10 +22,10 @@ try {
   execSync('cd vue-sav-app/client && npm install && npm run build', { stdio: 'inherit' });
 
   console.log('Copying client files...');
-  const clientDist = path.join(__dirname, 'vue-sav-app/client/dist');
+  const clientDist = join(__dirname, 'vue-sav-app/client/dist');
   
   // Copier les fichiers construits au bon endroit
-  if (fs.existsSync(clientDist)) {
+  if (existsSync(clientDist)) {
     execSync(`cp -r ${clientDist}/* ${distDir}`, { stdio: 'inherit' });
     console.log('Client files copied successfully');
   } else {
