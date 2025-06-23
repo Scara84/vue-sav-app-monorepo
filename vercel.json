@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "vue-sav-app/client/package.json", "use": "@vercel/static-build" },
-    { "src": "vue-sav-app/server/server.js", "use": "@vercel/node" }
+  "buildCommand": "npm run build",
+  "outputDirectory": "vue-sav-app/client/dist",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "includeFiles": [
+    "vue-sav-app/server/dist/**"
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api" },
