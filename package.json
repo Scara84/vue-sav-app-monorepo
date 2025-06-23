@@ -32,10 +32,15 @@
     "prettier": "^3.0.0"
   },
   "vercel": {
-    "buildCommand": "npm run build:all",
+    "buildCommand": "node vercel-build.js",
     "outputDirectory": "vue-sav-app/client/dist",
     "cleanUrls": true,
-    "trailingSlash": false
+    "trailingSlash": false,
+    "includeFiles": [
+      "vue-sav-app/client/dist/**",
+      "vue-sav-app/server/dist/**",
+      "vercel-build.js"
+    ]
   },
   "engines": {
     "node": ">=18.0.0"

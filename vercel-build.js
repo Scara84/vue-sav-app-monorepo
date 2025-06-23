@@ -23,42 +23,31 @@ if (!existsSync(distDir)) {
   mkdirSync(distDir, { recursive: true });
 }
 
-const runCommand = (command, cwd = __dirname) => {
-  console.log(`Running: ${command}`);
-  try {
-    execSync(command, { 
-      stdio: 'inherit',
-      cwd,
-      env: { ...process.env, VERCEL_BUILD_RUNNING: 'true' }
-    });
-    return true;
-  } catch (error) {
-    console.error(`Command failed: ${command}`, error);
-    return false;
-  }
-};
-
 try {
   // Installer les dépendances racine
   console.log('Installing root dependencies...');
-  if (!runCommand('npm install')) {
-    throw new Error('Failed to install root dependencies');
-  }
+  execSync('npm install', {
+    stdio: 'inherit',
+    cwd: __dirname
+  });
 
   // Construire le client
   console.log('Building client...');
-  if (!runCommand('npm install && npm run build', join(__dirname, 'vue-sav-app/client'))) {
-    throw new Error('Failed to build client');
-  }
+  execSync('npm install && npm run build', {
+    stdio: 'inherit',
+    cwd: join(__dirname, 'vue-sav-app/client')
+  });
+  console.log('Client built successfully!');
 
   // Copier les fichiers du client
   console.log('Copying client files...');
   const clientDist = join(__dirname, 'vue-sav-app/client/dist');
   
   if (existsSync(clientDist)) {
-    if (!runCommand(`cp -r ${clientDist}/* ${distDir}`)) {
-      throw new Error('Failed to copy client files');
-    }
+    execSync(`cp -r ${clientDist}/* ${distDir}`, {
+      stdio: 'inherit',
+      cwd: __dirname
+    });
     console.log('Client files copied successfully');
   } else {
     throw new Error(`Client dist directory not found at: ${clientDist}`);

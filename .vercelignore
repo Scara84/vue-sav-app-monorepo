@@ -19,6 +19,22 @@ node_modules/
 *.sln
 *.sw?
 
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+
+# Cache
+.cache/
+.temp/
+.tmp/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
 # Test coverage
 coverage/
 
