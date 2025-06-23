@@ -4,9 +4,6 @@
   "outputDirectory": "vue-sav-app/client/dist",
   "cleanUrls": true,
   "trailingSlash": false,
-  "includeFiles": [
-    "vue-sav-app/server/dist/**"
-  ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api" },
     { "src": "/(.*)", "dest": "/$1" }
