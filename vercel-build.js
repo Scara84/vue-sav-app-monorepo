@@ -25,19 +25,42 @@ if (!existsSync(distDir)) {
 
 try {
   // Installer les dépendances racine
-  console.log('Installing root dependencies...');
-  execSync('npm install', {
-    stdio: 'inherit',
-    cwd: __dirname
-  });
+  console.log('📦 Installing root dependencies...');
+  try {
+    execSync('npm install --no-audit --prefer-offline', {
+      stdio: 'inherit',
+      cwd: __dirname
+    });
+  } catch (error) {
+    console.error('❌ Failed to install root dependencies:', error);
+    process.exit(1);
+  }
 
   // Construire le client
-  console.log('Building client...');
-  execSync('npm install && npm run build', {
-    stdio: 'inherit',
-    cwd: join(__dirname, 'vue-sav-app/client')
-  });
-  console.log('Client built successfully!');
+  console.log('🔨 Building client...');
+  try {
+    execSync('npm install --no-audit --prefer-offline && npm run build', {
+      stdio: 'inherit',
+      cwd: join(__dirname, 'vue-sav-app/client')
+    });
+    console.log('✅ Client built successfully!');
+  } catch (error) {
+    console.error('❌ Error building client:', error);
+    process.exit(1);
+  }
+
+  // Construire le serveur
+  console.log('🔨 Building server...');
+  try {
+    execSync('npm install --no-audit --prefer-offline && npm run build', {
+      stdio: 'inherit',
+      cwd: join(__dirname, 'vue-sav-app/server')
+    });
+    console.log('✅ Server built successfully!');
+  } catch (error) {
+    console.error('❌ Error building server:', error);
+    process.exit(1);
+  }
 
   // Copier les fichiers du client
   console.log('Copying client files...');
